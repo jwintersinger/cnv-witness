@@ -5,11 +5,18 @@ function CnvPlotter() {
       this._W = 1200 - this._M[1] - this._M[3],
       this._H = 500 - this._M[0] - this._M[2];
 
-  this._container = d3.select('#container').html('').append('svg:svg')
+  var svg = d3.select('#container').html('')
+      .append('svg:svg')
       .attr('width', this._W + this._M[1] + this._M[3])
-      .attr('height', this._H + this._M[0] + this._M[2])
-      .append('svg:g')
-      .attr('transform', 'translate(' + this._M[3] + ',' + this._M[0] + ')');
+      .attr('height', this._H + this._M[0] + this._M[2]);
+  this._container = svg.append('svg:g')  // This container is for padding
+                       .attr('transform', 'translate(' + this._M[3] + ',' + this._M[0] + ')')
+                       .append('svg:g'); // This container is for zooming
+
+  var self = this;
+  svg.call(d3.behavior.zoom().on('zoom', function() {
+    self._container.attr('transform', 'translate(' + d3.event.translate + ') scale(' + d3.event.scale + ')');
+  }).scaleExtent([1, 100]));
 
   var max_cn = 5;
   this._compute_chrom_lens();
