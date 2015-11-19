@@ -2,13 +2,14 @@ function CnvPlotter() {
   var horiz_padding = 50;
   var vert_padding = 30;
   this._M = [vert_padding, horiz_padding, vert_padding, horiz_padding],
-      this._W = 1200 - this._M[1] - this._M[3],
+      //this._W = 1200 - this._M[1] - this._M[3],
       this._H = 500 - this._M[0] - this._M[2];
 
   var svg = d3.select('#container').html('')
       .append('svg:svg')
-      .attr('width', this._W + this._M[1] + this._M[3])
+      .attr('width', '100%')
       .attr('height', this._H + this._M[0] + this._M[2]);
+  this._W = svg.node().getBoundingClientRect().width - this._M[1] - this._M[3];
   this._container = svg.append('svg:g')  // This container is for padding
                        .attr('transform', 'translate(' + this._M[3] + ',' + this._M[0] + ')')
                        .append('svg:g'); // This container is for zooming
@@ -163,13 +164,18 @@ CnvPlotter.prototype.plot = function(intervals) {
   });
 }
 
-function main() {
+function draw() {
   var plotter = new CnvPlotter();
 
   d3.json("data/test.json", function(error, json) {
     if(error) return console.warn(error);
     plotter.plot(json);
   });
+}
+
+function main() {
+  d3.select(window).on('resize', draw);
+  draw();
 }
 
 main();
