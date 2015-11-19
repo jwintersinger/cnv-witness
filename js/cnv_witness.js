@@ -126,20 +126,23 @@ CnvPlotter.prototype._pick_colours = function() {
   return {
     vanloo_wedge: '#ff0000',
     mustonen095: '#00ff00',
-    peifer: '#0000ff'
+    peifer: '#0000ff',
+    theta_diploid: '#ffff00'
   };
 }
 
-CnvPlotter.prototype.plot = function(intervals) {
+CnvPlotter.prototype.plot = function(cn_calls) {
   var rect_height = 20;
   var colours = this._pick_colours();
 
+  d3.select('.page-header').text(cn_calls.dataset);
+
   var self = this;
-  Object.keys(intervals).forEach(function(chrom) {
-    Object.keys(intervals[chrom]).forEach(function(cnstate) {
+  Object.keys(cn_calls.intervals).forEach(function(chrom) {
+    Object.keys(cn_calls.intervals[chrom]).forEach(function(cnstate) {
       var comps = cnstate.split(',');
       var major = parseInt(comps[0], 10), minor = parseInt(comps[1], 10);
-      intervals[chrom][cnstate].forEach(function(interval) {
+      cn_calls.intervals[chrom][cnstate].forEach(function(interval) {
         var start = interval[0], end = interval[1], methods = interval[2];
 
         [major + minor, major].forEach(function(cn) {
@@ -167,9 +170,9 @@ CnvPlotter.prototype.plot = function(intervals) {
 function draw() {
   var plotter = new CnvPlotter();
 
-  d3.json("data/test.json", function(error, json) {
+  d3.json("data/test.json", function(error, cn_calls) {
     if(error) return console.warn(error);
-    plotter.plot(json);
+    plotter.plot(cn_calls);
   });
 }
 
