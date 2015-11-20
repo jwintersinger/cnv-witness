@@ -131,50 +131,98 @@ CnvPlotter.prototype._pick_colours = function() {
   };
 }
 
-CnvPlotter.prototype.plot = function(cn_calls) {
-  var rect_heights = {
-    total: 20,
-    //minor: 10
-  };
-  var colours = this._pick_colours();
+CnvPlotter.prototype._compute_offsets = function(cn_calls, rect_heights) {
+  var states = {};
 
-  d3.select('.page-header').text(cn_calls.dataset);
-  var theta_len = 0;
-
-  var self = this;
   Object.keys(rect_heights).forEach(function(cntype) {
     var rect_height = rect_heights[cntype];
     Object.keys(cn_calls.intervals[cntype]).forEach(function(chrom) {
       Object.keys(cn_calls.intervals[cntype][chrom]).forEach(function(cnstate) {
+        if(!(cnstate in states))
+          states[cnstate] = {};
+        if(!(cntype in states[cnstate]))
+          states[cnstate][cntype] = {};
+
         cn_calls.intervals[cntype][chrom][cnstate].forEach(function(interval) {
           var start = interval[0], end = interval[1], methods = interval[2];
-
-          if(methods.indexOf('theta_diploid') > -1 && chrom == '11') theta_len += (end - start);
-          //if(methods.length == 4) theta_len += (end - start);
-          [cnstate].forEach(function(cn) {
-            var xstart = self._xscale(self._compute_cum_chr_locus(chrom, start));
-            var xend = self._xscale(self._compute_cum_chr_locus(chrom, end));
-            var ystart = self._yscale(cn);
-            var yoffset = (rect_height * methods.length) / 2;
-
-
-            self._container.append('svg:g')
-                           .attr('transform', 'translate(0,' + (ystart - yoffset) + ')')
-                           .selectAll('rect')
-                           .data(methods)
-                           .enter().append('rect')
-                           .attr('x', xstart)
-                           .attr('y', function(d, i) { /*console.log([d, chrom, start, end, xstart, xend, ystart, yoffset, ystart - yoffset + i*rect_height]);*/ return i * rect_height; })
-                           .attr('fill', function(d, i) { return colours[d] })
-                           .attr('width', xend - xstart)
-                           .attr('height', rect_height);
+          methods.forEach(function(method) {
+            states[cnstate][cntype][method] = true;
           });
         });
       });
     });
   });
 
-  console.log([theta_len, theta_len / 3000000000]);
+  var offsets = {};
+  var summed = {};
+
+  Object.keys(states).forEach(function(cnstate) {
+    offsets[cnstate] = {};
+    // Explicitly list cntype rather than using Object.keys(), as we want to
+    // iterate in this exact order.
+    var total_cn_offset_sum = 0;
+    ['total', 'minor'].forEach(function(cntype) {
+      if(!(cntype in states[cnstate]))
+        return;
+
+      offsets[cnstate][cntype] = {};
+      var methods_for_state = Object.keys(states[cnstate][cntype]).sort();
+
+      for(var i = 0; i < methods_for_state.length; i++) {
+        var method = methods_for_state[i];
+        offsets[cnstate][cntype][method] = i * rect_heights[cntype];
+
+        if(cntype == 'total')
+          total_cn_offset_sum += rect_heights.total;
+        else if(cntype == 'minor')
+          offsets[cnstate][cntype][method] += total_cn_offset_sum;
+        summed[cnstate] = offsets[cnstate][cntype][method] + rect_heights[cntype];
+      }
+    });
+  });
+
+  return {
+    indiv: offsets,
+    summed: summed
+  };
+}
+
+CnvPlotter.prototype.plot = function(cn_calls) {
+  var colours = this._pick_colours();
+  var rect_heights = {
+    total: 10,
+    minor: 5
+  };
+  var offsets = this._compute_offsets(cn_calls, rect_heights);
+
+  d3.select('.page-header').text(cn_calls.dataset);
+
+  var self = this;
+  Object.keys(rect_heights).forEach(function(cntype) {
+    Object.keys(cn_calls.intervals[cntype]).forEach(function(chrom) {
+      Object.keys(cn_calls.intervals[cntype][chrom]).forEach(function(cnstate) {
+        cn_calls.intervals[cntype][chrom][cnstate].forEach(function(interval) {
+          var start = interval[0], end = interval[1], methods = interval[2];
+
+          var xstart = self._xscale(self._compute_cum_chr_locus(chrom, start));
+          var xend = self._xscale(self._compute_cum_chr_locus(chrom, end));
+          var ystart = self._yscale(cnstate);
+          var group_yoffset = offsets.summed[cnstate] / 2;
+
+          self._container.append('svg:g')
+                         .attr('transform', 'translate(0,' + (ystart - group_yoffset) + ')')
+                         .selectAll('rect')
+                         .data(methods)
+                         .enter().append('rect')
+                         .attr('x', xstart)
+                         .attr('y', function(d, i) { return offsets.indiv[cnstate][cntype][d]; })
+                         .attr('fill', function(d, i) { return colours[d] })
+                         .attr('width', xend - xstart)
+                         .attr('height', rect_heights[cntype]);
+        });
+      });
+    });
+  });
 }
 
 function draw() {
