@@ -148,3 +148,11 @@ body {
 #trees td, #trees th {
   cursor: pointer;
 }
+
+#snippets {
+  display: none;
+}
+
+#method-legend > div {
+  display: block;
+}

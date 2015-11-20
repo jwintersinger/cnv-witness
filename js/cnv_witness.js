@@ -223,6 +223,21 @@ CnvPlotter.prototype.plot = function(cn_calls) {
       });
     });
   });
+
+  var button_containers = d3.select('#method-legend').html('')
+    .selectAll('button')
+    .data(cn_calls.methods)
+    .enter().append('div')
+    .attr('class', 'input-group-btn disabled');
+  button_containers.append('button')
+    .attr('class', 'btn btn-default')
+    .attr('type', 'button')
+    .style('background-color', function(d, i) { return colours[d]; })
+    .html('&nbsp;&nbsp;&nbsp;');
+  button_containers.append('button')
+    .attr('class', 'btn btn-default')
+    .attr('type', 'button')
+    .text(function(d, i) { return d; });
 }
 
 function draw() {
