@@ -124,10 +124,10 @@ CnvPlotter.prototype._compute_cum_chr_locus = function(chrom, pos) {
 
 CnvPlotter.prototype._pick_colours = function() {
   return {
-    vanloo_wedge: '#ff0000',
-    mustonen095: '#00ff00',
-    peifer: '#0000ff',
-    theta_diploid: '#ffff00'
+    vanloo_wedge: '#66c2a5',
+    mustonen095: '#fc8d62',
+    peifer: '#8da0cb',
+    theta_diploid: '#e78ac3'
   };
 }
 
