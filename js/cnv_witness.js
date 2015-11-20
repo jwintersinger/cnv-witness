@@ -259,10 +259,13 @@ function main() {
       .attr('href', '#')
       .text(function(d, i) { return d })
       .on('click', function(sample_id) {
-        draw(sample_list[sample_id]);
+        var redraw = function() {
+          draw(sample_list[sample_id]);
+        };
+        redraw();
+        d3.select(window).on('resize', redraw);
       });
   });
-  //d3.select(window).on('resize', draw);
 }
 
 main();
