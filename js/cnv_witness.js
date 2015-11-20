@@ -240,18 +240,29 @@ CnvPlotter.prototype.plot = function(cn_calls) {
     .text(function(d, i) { return d; });
 }
 
-function draw() {
+function draw(data_path) {
   var plotter = new CnvPlotter();
 
-  d3.json("data/test.json", function(error, cn_calls) {
+  d3.json(data_path, function(error, cn_calls) {
     if(error) return console.warn(error);
     plotter.plot(cn_calls);
   });
 }
 
 function main() {
-  d3.select(window).on('resize', draw);
-  draw();
+  d3.json("data/index.json", function(error, sample_list) {
+    if(error) return console.warn(error);
+    d3.select('#samples').selectAll('li')
+      .data(Object.keys(sample_list).sort())
+      .enter().append('li')
+      .append('a')
+      .attr('href', '#')
+      .text(function(d, i) { return d })
+      .on('click', function(sample_id) {
+        draw(sample_list[sample_id]);
+      });
+  });
+  //d3.select(window).on('resize', draw);
 }
 
 main();
