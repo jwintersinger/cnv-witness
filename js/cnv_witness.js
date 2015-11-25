@@ -5,17 +5,17 @@ function CnvPlotter() {
       //this._W = 1200 - this._M[1] - this._M[3],
       this._H = 500 - this._M[0] - this._M[2];
 
-  var svg = d3.select('#container').html('')
+  this._svg = d3.select('#container').html('')
       .append('svg:svg')
       .attr('width', '100%')
       .attr('height', this._H + this._M[0] + this._M[2]);
-  this._W = svg.node().getBoundingClientRect().width - this._M[1] - this._M[3];
-  this._container = svg.append('svg:g')  // This container is for padding
+  this._W = this._svg.node().getBoundingClientRect().width - this._M[1] - this._M[3];
+  this._container = this._svg.append('svg:g')  // This container is for padding
                        .attr('transform', 'translate(' + this._M[3] + ',' + this._M[0] + ')')
                        .append('svg:g'); // This container is for zooming
 
   var self = this;
-  svg.call(d3.behavior.zoom().on('zoom', function() {
+  this._svg.call(d3.behavior.zoom().on('zoom', function() {
     self._container.attr('transform', 'translate(' + d3.event.translate + ') scale(' + d3.event.scale + ')');
   }).scaleExtent([1, 100]));
 
@@ -40,6 +40,38 @@ function CnvPlotter() {
            .attr('class', 'axis')
            .call(this._yaxis);
   this._draw_chrom_markers();
+}
+
+CnvPlotter.prototype._create_fills = function(colours, rect_heights) {
+  var fills = {
+    total: colours,
+    minor: {},
+  };
+
+  var self = this;
+  Object.keys(colours).forEach(function(method) {
+    // See http://stackoverflow.com/a/22643745
+    var fill_name = method + '_minor';
+    self._svg.append('pattern')
+       .attr({
+         id: fill_name,
+         width: 10,
+         height: 10,
+         patternTransform: 'rotate(45 0 0)',
+         patternUnits: 'userSpaceOnUse'
+      }).append('line').attr({
+        x1: 0,
+        y1: 0,
+        x2: 0,
+        y2: 10,
+      }).style({
+        'stroke': colours[method],
+        'stroke-width': 15
+      });
+    fills.minor[method] = 'url(#' + fill_name + ')';
+  });
+
+  return fills;
 }
 
 CnvPlotter.prototype._compute_chrom_lens = function() {
@@ -188,12 +220,14 @@ CnvPlotter.prototype._compute_offsets = function(cn_calls, rect_heights) {
 }
 
 CnvPlotter.prototype.plot = function(cn_calls) {
-  var colours = this._pick_colours();
   var rect_heights = {
     total: 10,
     minor: 5
   };
   var offsets = this._compute_offsets(cn_calls, rect_heights);
+  var methods = cn_calls.methods;
+  var colours = this._pick_colours();
+  var fills = this._create_fills(colours, rect_heights);
 
   d3.select('.page-header').text(cn_calls.dataset);
 
@@ -216,7 +250,7 @@ CnvPlotter.prototype.plot = function(cn_calls) {
                          .enter().append('rect')
                          .attr('x', xstart)
                          .attr('y', function(d, i) { return offsets.indiv[cnstate][cntype][d]; })
-                         .attr('fill', function(d, i) { return colours[d] })
+                         .attr('fill', function(d, i) { return fills[cntype][d] })
                          .attr('width', xend - xstart)
                          .attr('height', rect_heights[cntype]);
         });
@@ -226,7 +260,7 @@ CnvPlotter.prototype.plot = function(cn_calls) {
 
   var button_containers = d3.select('#method-legend').html('')
     .selectAll('button')
-    .data(cn_calls.methods)
+    .data(methods)
     .enter().append('div')
     .attr('class', 'input-group-btn disabled');
   button_containers.append('button')
@@ -240,6 +274,23 @@ CnvPlotter.prototype.plot = function(cn_calls) {
     .text(function(d, i) { return d; });
 }
 
+function Interface() {
+  this._activate_filters();
+}
+
+Interface.prototype._activate_filters = function() {
+  $('.filter').keyup(function(evt) {
+    var self = $(this);
+    var filter_text = self.val();
+    var elems = self.parents('.sidebar').find('.nav-sidebar').find('li');
+    console.log(elems);
+    elems.hide();
+    elems.filter(function() {
+      return !($(this).text().indexOf(filter_text) === -1);
+    }).show();
+  });
+}
+
 function draw(data_path) {
   var plotter = new CnvPlotter();
 
@@ -250,6 +301,8 @@ function draw(data_path) {
 }
 
 function main() {
+  new Interface();
+
   d3.json("data/index.json", function(error, sample_list) {
     if(error) return console.warn(error);
     d3.select('#samples').selectAll('li')
