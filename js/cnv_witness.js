@@ -300,7 +300,8 @@ Interface.prototype._fill_sample_selectors = function(sample_list) {
   rows.append('td').attr('class', 'tumor-type').text('BRCA');
   rows.append('td').attr('class', 'ploidy').text(0.5);
   rows.append('td').attr('class', 'purity').text(0.6);
-  rows.append('td').attr('class', 'consensus').text(0.7);
+  rows.append('td').attr('class', 'genome-prop').text(0.7);
+  rows.append('td').attr('class', 'consensus-score').text(0.7);
 
   this._update_sample_count(false);
 
@@ -390,10 +391,10 @@ Interface.prototype._filter_samples = function(callback) {
 Interface.prototype._activate_sample_filter = function() {
   var self = this;
   $('.sample-filter').keyup(function(evt) {
-    var filter_text = $(this).val();
+    var filter_text = $(this).val().toLowerCase();
     self._filter_samples(function() {
-      var sampid = $(this).find('.sampid').text();
-      var tumor_type = $(this).find('.tumor-type').text();
+      var sampid = $(this).find('.sampid').text().toLowerCase();
+      var tumor_type = $(this).find('.tumor-type').text().toLowerCase();
       return sampid.indexOf(filter_text) !== -1 || tumor_type.indexOf(filter_text) !== -1;
     });
   });
