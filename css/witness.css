@@ -129,6 +129,32 @@ body {
   display: none;
 }
 
-#method-legend > div {
-  display: block;
+#sample-method-filter {
+  margin-top: 3em;
+}
+
+#global-method-filter {
+  margin-top: 1em;
+}
+
+.method-selector button {
+  opacity: 0.6;
+}
+
+.method-selector button.active {
+  opacity: 1;
+}
+
+
+#sample-selector-extended .modal-dialog {
+  width: 90%;
+}
+
+#sample-selector-extended .modal-body {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+#sample-list-extended tbody tr {
+  cursor: pointer;
 }

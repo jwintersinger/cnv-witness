@@ -10,10 +10,16 @@ def main():
 
   base_dir = 'data'
   for cnv_cmp in glob.glob(os.path.join(base_dir, '*.json')):
-      dataset_name = cnv_cmp.split('/')[-1].split('.')[0]
-      if dataset_name == 'index':
-        continue
-      datasets[dataset_name] = cnv_cmp
+    with open(cnv_cmp) as cnvf:
+      cn_calls = json.load(cnvf)
+
+    dataset_name = cnv_cmp.split('/')[-1].split('.')[0]
+    if dataset_name == 'index':
+      continue
+    datasets[dataset_name] = {
+      'cn_calls_path': cnv_cmp,
+      'methods': cn_calls['methods']
+    }
 
   out_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', 'index.json')
   with open(out_path, 'w') as outf:

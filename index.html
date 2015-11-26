@@ -11,7 +11,7 @@
     <title>CNV Witness</title>
 
     <!-- Bootstrap core CSS -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Custom styles for this template -->
     <link href="css/witness.css" rel="stylesheet">
@@ -38,8 +38,8 @@
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav navbar-right">
-            <!--<li class="active"><a class="nav-tree-summaries" href="#">Tree summaries</a></li>
-            <li><a class="nav-tree-viewer" href="#">Tree viewer</a></li>
+            <li><a class="nav-tree-summaries" href="#" data-toggle="modal" data-target="#sample-selector-extended">Select sample</a>
+            <!--<li><a class="nav-tree-viewer" href="#">Tree viewer</a></li>
             <li><a class="nav-clustered-trees" href="#">Clustered trees</a></li>-->
           </ul>
         </div>
@@ -50,16 +50,16 @@
       <div class="row">
         <div id="sample-list" class="col-sm-3 col-md-2 secondary-sidebar sidebar">
           <div id="sample-controls">
-            <p><input type="text" class="form-control filter" placeholder="Filter ..."></p>
+            <!--<p><input type="text" class="form-control filter" placeholder="Filter ..."></p>-->
           </div>
-          <ul id="samples" class="nav nav-sidebar">
+          <ul id="sample-list-compact" class="nav nav-sidebar">
           </ul>
         </div>
 
         <div class="col-sm-9 col-md-10 main">
           <h1 class="page-header"></h1>
           <div id="container"></div>
-          <div id="method-legend" role="group"></div>
+          <div id="sample-method-filter"></div>
         </div>
       </div>
     </div>
@@ -67,7 +67,34 @@
     <div id="snippets">
     </div>
 
+    <div class="modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel" id="sample-selector-extended">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title"><span class="sample-count">0</span> sample<span class="plural">s</span></h4>
+            <input type="text" class="form-control sample-filter" placeholder="Filter on sample ID or tumor type ...">
+            <div id="global-method-filter"></div>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-sm-12">
+                <table class="table table-striped table-hover table-condensed table-responsive" id="sample-list-extended">
+                  <thead>
+                    <tr><th>Sample</th><th>Tumor type</th><th>Ploidy</th><th>Purity</th><th>Consensus proportion</th></tr>
+                  </thead>
+                  <tbody>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script type="text/javascript" src="//code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
     <script type="text/javascript" src="js/cnv_witness.js"></script>
   </body>

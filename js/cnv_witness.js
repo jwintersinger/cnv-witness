@@ -1,4 +1,6 @@
-function CnvPlotter() {
+function CnvPlotter(iface) {
+  this._iface = iface;
+
   var horiz_padding = 50;
   var vert_padding = 30;
   this._M = [vert_padding, horiz_padding, vert_padding, horiz_padding],
@@ -66,7 +68,7 @@ CnvPlotter.prototype._create_fills = function(colours, rect_heights) {
         y2: 10,
       }).style({
         'stroke': colours[method],
-        'stroke-width': 15
+        'stroke-width': 16
       });
     fills.minor[method] = 'url(#' + fill_name + ')';
   });
@@ -154,15 +156,6 @@ CnvPlotter.prototype._compute_cum_chr_locus = function(chrom, pos) {
   return this._cum_chr_lens[chrom] + pos;
 }
 
-CnvPlotter.prototype._pick_colours = function() {
-  return {
-    vanloo_wedge: '#66c2a5',
-    mustonen095: '#fc8d62',
-    peifer: '#8da0cb',
-    theta_diploid: '#e78ac3'
-  };
-}
-
 CnvPlotter.prototype._compute_offsets = function(cn_calls, rect_heights) {
   var states = {};
 
@@ -226,7 +219,7 @@ CnvPlotter.prototype.plot = function(cn_calls) {
   };
   var offsets = this._compute_offsets(cn_calls, rect_heights);
   var methods = cn_calls.methods;
-  var colours = this._pick_colours();
+  var colours = this._iface.pick_colours();
   var fills = this._create_fills(colours, rect_heights);
 
   d3.select('.page-header').text(cn_calls.dataset);
@@ -258,66 +251,169 @@ CnvPlotter.prototype.plot = function(cn_calls) {
     });
   });
 
-  var button_containers = d3.select('#method-legend').html('')
+  this._iface.make_methods_filter('#sample-method-filter', methods, function(active_methods) {
+
+  });
+}
+
+function Interface(sample_list) {
+  this._activate_sample_filter();
+  this._activate_method_filter(sample_list);
+  this._fill_sample_selectors(sample_list);
+}
+
+Interface.prototype.make_methods_filter = function(container, methods, on_change) {
+  var colours = this.pick_colours();
+  var buttons_container = d3.select(container).html('')
+    .append('div')
+    .attr('class', 'method-selector btn-group')
+    .attr('role', 'group')
     .selectAll('button')
     .data(methods)
-    .enter().append('div')
-    .attr('class', 'input-group-btn disabled');
-  button_containers.append('button')
-    .attr('class', 'btn btn-default')
-    .attr('type', 'button')
+    .enter().append('button')
+    .attr('class', 'btn btn-primary active method-choice')
     .style('background-color', function(d, i) { return colours[d]; })
-    .html('&nbsp;&nbsp;&nbsp;');
-  button_containers.append('button')
-    .attr('class', 'btn btn-default')
-    .attr('type', 'button')
+    .style('color', 'black')
+    .text(function(d, i) { return d; })
+    .on('click', function(method) {
+      var elem = d3.select(this);
+      // Toggle "active" class
+      elem.classed('active', !elem.classed('active'));
+
+      var active_methods = d3.select(this.parentNode).selectAll('.method-choice')
+                             .filter('.active')
+                             .data();
+      on_change(active_methods);
+    });
+  return buttons_container;
+}
+
+Interface.prototype._fill_sample_selectors = function(sample_list) {
+  var sampids = Object.keys(sample_list).sort();
+
+  // Fill extended selector
+  var rows = d3.select('#sample-list-extended tbody').html('')
+    .selectAll('tr')
+    .data(sampids)
+    .enter().append('tr');
+  rows.append('td').attr('class', 'sampid').text(function(d, i) { return d; });
+  rows.append('td').attr('class', 'tumor-type').text('BRCA');
+  rows.append('td').attr('class', 'ploidy').text(0.5);
+  rows.append('td').attr('class', 'purity').text(0.6);
+  rows.append('td').attr('class', 'consensus').text(0.7);
+
+  this._update_sample_count(false);
+
+  // Fill compact selector
+  d3.select('#sample-list-compact').selectAll('li')
+    .data(sampids)
+    .enter().append('li')
+    .append('a')
+    .attr('href', '#')
     .text(function(d, i) { return d; });
+
+  var self = this;
+  var load_sample = function(sampid) {
+    var redraw = function() {
+      var plotter = new CnvPlotter(self);
+      var cn_calls_path = sample_list[sampid].cn_calls_path;
+
+      d3.json(cn_calls_path, function(error, cn_calls) {
+        if(error) return console.warn(error);
+        plotter.plot(cn_calls);
+      });
+    };
+    redraw();
+    d3.select(window).on('resize', redraw);
+  };
+
+  d3.selectAll('#sample-list-extended tbody tr').on('click', function(sampid) {
+    $('#sample-selector-extended').modal('hide');
+    load_sample(sampid);
+  });
+  d3.selectAll('#sample-list-compact li').on('click', load_sample);
 }
 
-function Interface() {
-  this._activate_filters();
+Interface.prototype._update_sample_count = function(only_visible) {
+  // On document creation, before the modal is shown, the sample table won't be
+  // considered visible, so the number of rows will be considered to be zero.
+  if(only_visible) {
+    var sample_count = $('#sample-list-extended tbody tr:visible').length;
+  } else {
+    var sample_count = $('#sample-list-extended tbody tr').length;
+  }
+
+  var samp_elem = $('.sample-count').text(sample_count);
+  var plural = samp_elem.siblings('.plural');
+  if(sample_count == 1) {
+    plural.hide();
+  } else {
+    plural.show();
+  }
 }
 
-Interface.prototype._activate_filters = function() {
-  $('.filter').keyup(function(evt) {
-    var self = $(this);
-    var filter_text = self.val();
-    var elems = self.parents('.sidebar').find('.nav-sidebar').find('li');
-    console.log(elems);
-    elems.hide();
-    elems.filter(function() {
-      return !($(this).text().indexOf(filter_text) === -1);
-    }).show();
+Interface.prototype._activate_method_filter = function(sample_list) {
+  var samples_by_method = {};
+
+  Object.keys(sample_list).sort().forEach(function(sample_id) {
+    var methods = sample_list[sample_id].methods;
+    methods.forEach(function(method) {
+      if(!(method in samples_by_method))
+        samples_by_method[method] = {}; // Use object for O(1) lookup
+      samples_by_method[method][sample_id] = true;
+    });
+  });
+
+  var methods = Object.keys(samples_by_method).sort();
+  var self = this;
+  this.make_methods_filter('#global-method-filter', methods, function(active_methods) {
+    var samples_to_show = {};
+    active_methods.forEach(function(active_method) {
+      Object.keys(samples_by_method[active_method]).forEach(function(sampid) {
+        samples_to_show[sampid] = true;
+      });
+    });
+    self._filter_samples(function() {
+      var sampid = $(this).find('.sampid').text();
+      return sampid in samples_to_show;
+    });
   });
 }
 
-function draw(data_path) {
-  var plotter = new CnvPlotter();
+Interface.prototype._filter_samples = function(callback) {
+  var elems = $('#sample-selector-extended tbody').find('tr');
+  elems.hide();
+  elems.filter(callback).show();
+  this._update_sample_count(true);
+}
 
-  d3.json(data_path, function(error, cn_calls) {
-    if(error) return console.warn(error);
-    plotter.plot(cn_calls);
+Interface.prototype._activate_sample_filter = function() {
+  var self = this;
+  $('.sample-filter').keyup(function(evt) {
+    var filter_text = $(this).val();
+    self._filter_samples(function() {
+      var sampid = $(this).find('.sampid').text();
+      var tumor_type = $(this).find('.tumor-type').text();
+      return sampid.indexOf(filter_text) !== -1 || tumor_type.indexOf(filter_text) !== -1;
+    });
   });
 }
+
+Interface.prototype.pick_colours = function() {
+  return {
+    vanloo_wedge: '#66c2a5',
+    mustonen095: '#fc8d62',
+    peifer: '#8da0cb',
+    theta_diploid: '#e78ac3'
+  };
+}
+
 
 function main() {
-  new Interface();
 
   d3.json("data/index.json", function(error, sample_list) {
     if(error) return console.warn(error);
-    d3.select('#samples').selectAll('li')
-      .data(Object.keys(sample_list).sort())
-      .enter().append('li')
-      .append('a')
-      .attr('href', '#')
-      .text(function(d, i) { return d })
-      .on('click', function(sample_id) {
-        var redraw = function() {
-          draw(sample_list[sample_id]);
-        };
-        redraw();
-        d3.select(window).on('resize', redraw);
-      });
+    new Interface(sample_list);
   });
 }
 
