@@ -258,6 +258,7 @@ function Interface(sample_list) {
   this._index_samples_by_method(sample_list);
   this._fill_sample_selectors(sample_list);
   this._activate_filters(sample_list);
+  this._filter();
 }
 
 Interface.prototype.make_methods_filter = function(container, methods, on_change) {
@@ -346,7 +347,6 @@ Interface.prototype._index_samples_by_method = function(sample_list) {
 }
 
 Interface.prototype._filter = function(sample_list) {
-
   var active_methods = d3.select('#global-method-filter')
                          .selectAll('.method-choice.active')
                          .data();
