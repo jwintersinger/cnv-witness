@@ -251,15 +251,14 @@ CnvPlotter.prototype.plot = function(cn_calls) {
     });
   });
 
-  this._iface.make_methods_filter('#sample-method-filter', methods, function(active_methods) {
-
+  this._iface.make_methods_filter('#sample-method-filter', methods, function() {
   });
 }
 
 function Interface(sample_list) {
-  this._activate_sample_filter();
-  this._activate_method_filter(sample_list);
+  this._index_samples_by_method(sample_list);
   this._fill_sample_selectors(sample_list);
+  this._activate_filters(sample_list);
 }
 
 Interface.prototype.make_methods_filter = function(container, methods, on_change) {
@@ -273,7 +272,7 @@ Interface.prototype.make_methods_filter = function(container, methods, on_change
     .enter().append('button')
     .attr('class', 'btn btn-primary active method-choice')
     .style('background-color', function(d, i) { return colours[d]; })
-    .style('color', 'black')
+    .style('color', 'white')
     .text(function(d, i) { return d; })
     .on('click', function(method) {
       var elem = d3.select(this);
@@ -283,13 +282,13 @@ Interface.prototype.make_methods_filter = function(container, methods, on_change
       var active_methods = d3.select(this.parentNode).selectAll('.method-choice')
                              .filter('.active')
                              .data();
-      on_change(active_methods);
+      on_change();
     });
-  return buttons_container;
 }
 
 Interface.prototype._fill_sample_selectors = function(sample_list) {
   var sampids = Object.keys(sample_list).sort();
+  this._update_sample_count(sampids.length);
 
   // Fill extended selector
   var rows = d3.select('#sample-list-extended tbody').html('')
@@ -301,17 +300,7 @@ Interface.prototype._fill_sample_selectors = function(sample_list) {
   rows.append('td').attr('class', 'ploidy').text(0.5);
   rows.append('td').attr('class', 'purity').text(0.6);
   rows.append('td').attr('class', 'genome-prop').text(0.7);
-  rows.append('td').attr('class', 'consensus-score').text(0.7);
-
-  this._update_sample_count(false);
-
-  // Fill compact selector
-  d3.select('#sample-list-compact').selectAll('li')
-    .data(sampids)
-    .enter().append('li')
-    .append('a')
-    .attr('href', '#')
-    .text(function(d, i) { return d; });
+  rows.append('td').attr('class', 'consensus-score').text(0.8);
 
   var self = this;
   var load_sample = function(sampid) {
@@ -332,18 +321,9 @@ Interface.prototype._fill_sample_selectors = function(sample_list) {
     $('#sample-selector-extended').modal('hide');
     load_sample(sampid);
   });
-  d3.selectAll('#sample-list-compact li').on('click', load_sample);
 }
 
-Interface.prototype._update_sample_count = function(only_visible) {
-  // On document creation, before the modal is shown, the sample table won't be
-  // considered visible, so the number of rows will be considered to be zero.
-  if(only_visible) {
-    var sample_count = $('#sample-list-extended tbody tr:visible').length;
-  } else {
-    var sample_count = $('#sample-list-extended tbody tr').length;
-  }
-
+Interface.prototype._update_sample_count = function(sample_count) {
   var samp_elem = $('.sample-count').text(sample_count);
   var plural = samp_elem.siblings('.plural');
   if(sample_count == 1) {
@@ -353,9 +333,8 @@ Interface.prototype._update_sample_count = function(only_visible) {
   }
 }
 
-Interface.prototype._activate_method_filter = function(sample_list) {
+Interface.prototype._index_samples_by_method = function(sample_list) {
   var samples_by_method = {};
-
   Object.keys(sample_list).sort().forEach(function(sample_id) {
     var methods = sample_list[sample_id].methods;
     methods.forEach(function(method) {
@@ -364,48 +343,65 @@ Interface.prototype._activate_method_filter = function(sample_list) {
       samples_by_method[method][sample_id] = true;
     });
   });
-
-  var methods = Object.keys(samples_by_method).sort();
-  var self = this;
-  this.make_methods_filter('#global-method-filter', methods, function(active_methods) {
-    var samples_to_show = {};
-    active_methods.forEach(function(active_method) {
-      Object.keys(samples_by_method[active_method]).forEach(function(sampid) {
-        samples_to_show[sampid] = true;
-      });
-    });
-    self._filter_samples(function() {
-      var sampid = $(this).find('.sampid').text();
-      return sampid in samples_to_show;
-    });
-  });
+  this._samples_by_method = samples_by_method;
 }
 
-Interface.prototype._filter_samples = function(callback) {
+Interface.prototype._filter = function(sample_list) {
+
+  var active_methods = d3.select('#global-method-filter')
+                         .selectAll('.method-choice.active')
+                         .data();
+
   var elems = $('#sample-selector-extended tbody').find('tr');
   elems.hide();
-  elems.filter(callback).show();
-  this._update_sample_count(true);
+
+  var self = this;
+  var visible = elems.filter(function() {
+    if(active_methods.length === 0)
+      return false;
+
+    var row = $(this);
+    var sampid = row.find('.sampid').text().toLowerCase();
+    var tumor_type = row.find('.tumor-type').text().toLowerCase();
+
+    for(var i = 0; i < active_methods.length; i++) {
+      var method = active_methods[i];
+      if(!(sampid in self._samples_by_method[method]))
+        return false;
+    }
+
+    var sample_filter = $('#sample-filter');
+    var filter_text = $('#sample-filter').val().toLowerCase();
+    if(sampid.indexOf(filter_text) === -1 && tumor_type.indexOf(filter_text) === -1)
+      return false;
+
+    return true;
+  }).show();
+
+  this._update_sample_count(visible.length);
 }
 
-Interface.prototype._activate_sample_filter = function() {
+Interface.prototype._activate_filters = function(sample_list) {
+  var methods = Object.keys(this._samples_by_method).sort();
   var self = this;
+
+  this.make_methods_filter('#global-method-filter', methods, function() {
+    self._filter();
+  });
+
   $('.sample-filter').keyup(function(evt) {
-    var filter_text = $(this).val().toLowerCase();
-    self._filter_samples(function() {
-      var sampid = $(this).find('.sampid').text().toLowerCase();
-      var tumor_type = $(this).find('.tumor-type').text().toLowerCase();
-      return sampid.indexOf(filter_text) !== -1 || tumor_type.indexOf(filter_text) !== -1;
-    });
+    self._filter();
   });
 }
 
 Interface.prototype.pick_colours = function() {
   return {
-    vanloo_wedge: '#66c2a5',
-    mustonen095: '#fc8d62',
-    peifer: '#8da0cb',
-    theta_diploid: '#e78ac3'
+    consensus: '#1b9e77',
+    broad: '#d95f02',
+    mustonen095: '#7570b3',
+    peifer: '#e7298a',
+    theta_diploid: '#66a61e',
+    vanloo_wedge: '#e6ab02'
   };
 }
 

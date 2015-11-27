@@ -38,9 +38,7 @@
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav navbar-right">
-            <li><a class="nav-tree-summaries" href="#" data-toggle="modal" data-target="#sample-selector-extended">Select sample</a>
-            <!--<li><a class="nav-tree-viewer" href="#">Tree viewer</a></li>
-            <li><a class="nav-clustered-trees" href="#">Clustered trees</a></li>-->
+            <li><button class="btn btn-primary" data-toggle="modal" data-target="#sample-selector-extended">Select sample</button></li>
           </ul>
         </div>
       </div>
@@ -48,23 +46,12 @@
 
     <div class="container-fluid">
       <div class="row">
-        <div id="sample-list" class="col-sm-3 col-md-2 secondary-sidebar sidebar">
-          <div id="sample-controls">
-            <!--<p><input type="text" class="form-control filter" placeholder="Filter ..."></p>-->
-          </div>
-          <ul id="sample-list-compact" class="nav nav-sidebar">
-          </ul>
-        </div>
-
-        <div class="col-sm-9 col-md-10 main">
+        <div class="col-sm-12 main">
           <h1 class="page-header"></h1>
           <div id="container"></div>
           <div id="sample-method-filter"></div>
         </div>
       </div>
-    </div>
-
-    <div id="snippets">
     </div>
 
     <div class="modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel" id="sample-selector-extended">
@@ -73,7 +60,7 @@
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
             <h4 class="modal-title"><span class="sample-count">0</span> sample<span class="plural">s</span></h4>
-            <input type="text" class="form-control sample-filter" placeholder="Filter on sample ID or tumor type ...">
+            <input id="sample-filter" type="text" class="form-control" placeholder="Filter on sample ID or tumor type ...">
             <div id="global-method-filter"></div>
           </div>
           <div class="modal-body">
