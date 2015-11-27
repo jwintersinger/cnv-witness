@@ -123,7 +123,6 @@ CnvPlotter.prototype._compute_chrom_lens = function() {
   this._total_len = sum;
 }
 
-
 CnvPlotter.prototype._draw_chrom_markers = function() {
   var chroms = this._container.append('svg:g')
                  .attr('class', 'axis')
@@ -296,7 +295,7 @@ Interface.prototype._fill_sample_selectors = function(sample_list) {
     .data(sampids)
     .enter().append('tr');
   rows.append('td').attr('class', 'sampid').text(function(d, i) { return d; });
-  rows.append('td').attr('class', 'tumor-type').text('BRCA');
+  rows.append('td').attr('class', 'tumor-type').html('&mdash;');
   rows.append('td').attr('class', 'ploidy').text(0.5);
   rows.append('td').attr('class', 'purity').text(0.6);
   rows.append('td').attr('class', 'genome-prop').text(0.7);
@@ -389,7 +388,7 @@ Interface.prototype._activate_filters = function(sample_list) {
     self._filter();
   });
 
-  $('.sample-filter').keyup(function(evt) {
+  $('#sample-filter').keyup(function(evt) {
     self._filter();
   });
 }
