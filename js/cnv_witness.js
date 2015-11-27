@@ -396,7 +396,8 @@ Interface.prototype._activate_filters = function(sample_list) {
 
 Interface.prototype.pick_colours = function() {
   return {
-    consensus: '#1b9e77',
+    //consensus: '#1b9e77',
+    consensus: '#000000',
     broad: '#d95f02',
     mustonen095: '#7570b3',
     peifer: '#e7298a',
@@ -407,10 +408,10 @@ Interface.prototype.pick_colours = function() {
 
 
 function main() {
-
   d3.json("data/index.json", function(error, sample_list) {
     if(error) return console.warn(error);
     new Interface(sample_list);
+    $('#sample-selector-extended').modal('show');
   });
 }
 
