@@ -14,7 +14,7 @@ def main():
       cn_calls = json.load(cnvf)
 
     dataset_name = cnv_cmp.split('/')[-1].split('.')[0]
-    if dataset_name == 'index':
+    if dataset_name in ('index', 'metadata'):
       continue
     datasets[dataset_name] = {
       'cn_calls_path': cnv_cmp,

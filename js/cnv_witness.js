@@ -254,9 +254,9 @@ CnvPlotter.prototype.plot = function(cn_calls) {
   });
 }
 
-function Interface(sample_list) {
+function Interface(sample_list, metadata) {
   this._index_samples_by_method(sample_list);
-  this._fill_sample_selectors(sample_list);
+  this._fill_sample_selectors(sample_list, metadata);
   this._activate_filters(sample_list);
   this._filter();
 }
@@ -286,7 +286,7 @@ Interface.prototype.make_methods_filter = function(container, methods, on_change
     });
 }
 
-Interface.prototype._fill_sample_selectors = function(sample_list) {
+Interface.prototype._fill_sample_selectors = function(sample_list, metadata) {
   var sampids = Object.keys(sample_list).sort();
   this._update_sample_count(sampids.length);
 
@@ -295,15 +295,33 @@ Interface.prototype._fill_sample_selectors = function(sample_list) {
     return prop === -1 ? '&mdash;' : prop.toFixed(3);
   };
 
+  var calc_mean_val = function(sampid, prop) {
+    var vals = [];
+    if(!(metadata.hasOwnProperty(sampid) && metadata[sampid].hasOwnProperty(prop)))
+      return -1;
+    Object.keys(metadata[sampid][prop]).forEach(function(method) {
+      if(method.lastIndexOf('theta', 0) === 0)
+        return;
+      vals.push(metadata[sampid][prop][method]);
+    });
+    return d3.mean(vals);
+  };
+
   // Fill extended selector
   var rows = d3.select('#sample-list-extended tbody').html('')
     .selectAll('tr')
     .data(sampids)
     .enter().append('tr');
-  rows.append('td').attr('class', 'sampid').text(function(d, i) { return d; });
-  rows.append('td').attr('class', 'tumor-type').html('&mdash;');
-  rows.append('td').attr('class', 'ploidy').text(0.5);
-  rows.append('td').attr('class', 'purity').text(0.6);
+  rows.append('td').attr('class', 'sampid').text(function(sampid) { return sampid; });
+  rows.append('td').attr('class', 'tumor-type').html(function(sampid) {
+    return metadata.hasOwnProperty(sampid) ? metadata[sampid]['tumor_type'] : '&mdash;';
+  });
+  rows.append('td').attr('class', 'ploidy').attr('data-sort-value', function(sampid) {
+    return calc_mean_val(sampid, 'ploidy');
+  }).html(make_human_readable_from_sort_val);
+  rows.append('td').attr('class', 'purity').attr('data-sort-value', function(sampid) {
+    return calc_mean_val(sampid, 'purity');
+  }).html(make_human_readable_from_sort_val);
   rows.append('td').attr('class', 'genome-prop').attr('data-sort-value', function(d, i) {
     var proportions = sample_list[d].genome_proportions
     // Return -1 so that datasets without consensus will be sorted below those
@@ -441,8 +459,10 @@ Interface.prototype.pick_colours = function() {
 function main() {
   d3.json("data/index.json", function(error, sample_list) {
     if(error) return console.warn(error);
-    new Interface(sample_list);
-    $('#sample-selector-extended').modal('show');
+    d3.json("data/metadata.json", function(error, metadata) {
+      new Interface(sample_list, metadata);
+      $('#sample-selector-extended').modal('show');
+    });
   });
 }
 
