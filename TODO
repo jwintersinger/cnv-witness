@@ -1,0 +1,4 @@
+Show breakpoints of structural variants
+  Can use Sanger SV calls, but David prefers DKFZ
+Add purity/ploidy to each individual sample (Peter's suggestion)
+Mask out regions with any subclonal calls, as per David's suggestion

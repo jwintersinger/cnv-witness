@@ -79,7 +79,7 @@ body {
   background-color: white;
 }
 
-#trees td, #trees th {
+#sample-list-extended th {
   cursor: pointer;
 }
 

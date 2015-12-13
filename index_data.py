@@ -18,7 +18,8 @@ def main():
       continue
     datasets[dataset_name] = {
       'cn_calls_path': cnv_cmp,
-      'methods': cn_calls['methods']
+      'methods': cn_calls['methods'],
+      'genome_proportions': cn_calls['genome_proportions']
     }
 
   out_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', 'index.json')

@@ -299,8 +299,17 @@ Interface.prototype._fill_sample_selectors = function(sample_list) {
   rows.append('td').attr('class', 'tumor-type').html('&mdash;');
   rows.append('td').attr('class', 'ploidy').text(0.5);
   rows.append('td').attr('class', 'purity').text(0.6);
-  rows.append('td').attr('class', 'genome-prop').text(0.7);
+  rows.append('td').attr('data-sort-value', function(d, i) {
+    var proportions = sample_list[d].genome_proportions
+    // Return -1 so that datasets without consensus will be sorted below those
+    // for which the consensus is actually 0.
+    return proportions.hasOwnProperty('consensus') ?  proportions.consensus  : -1;
+  }).html(function(d, i) {
+    var prop = parseFloat(d3.select(this).attr('data-sort-value'));
+    return prop === -1 ? '&mdash;' : prop.toFixed(3);
+  });
   rows.append('td').attr('class', 'consensus-score').text(0.8);
+  $('#sample-list-extended').stupidtable();
 
   var self = this;
   var load_sample = function(sampid) {
