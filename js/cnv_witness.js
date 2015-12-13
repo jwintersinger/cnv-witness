@@ -221,8 +221,6 @@ CnvPlotter.prototype.plot = function(cn_calls) {
   var colours = this._iface.pick_colours();
   var fills = this._create_fills(colours, rect_heights);
 
-  d3.select('.page-header').text(cn_calls.dataset);
-
   var self = this;
   Object.keys(rect_heights).forEach(function(cntype) {
     Object.keys(cn_calls.intervals[cntype]).forEach(function(chrom) {
@@ -365,6 +363,37 @@ Interface.prototype._fill_sample_selectors = function(sample_list, metadata) {
     };
     redraw();
     d3.select(window).on('resize', redraw);
+
+    d3.select('#sampid').text(sampid);
+    if(!metadata.hasOwnProperty(sampid))
+      return;
+    d3.select('#tumor-type').text(metadata[sampid].tumor_type);
+
+    var sample_meta = {};
+    Object.keys(metadata[sampid].ploidy).forEach(function(method) {
+      if(!sample_meta.hasOwnProperty(method))
+        sample_meta[method] = {};
+      sample_meta[method].ploidy = metadata[sampid].ploidy[method];
+    });
+    Object.keys(metadata[sampid].purity).forEach(function(method) {
+      if(!sample_meta.hasOwnProperty(method))
+        sample_meta[method] = {};
+      sample_meta[method].purity = metadata[sampid].purity[method];
+    });
+
+    var rows = d3.select('#sample-metadata tbody').html('')
+      .selectAll('tr')
+      .data(Object.keys(sample_meta).sort())
+      .enter().append('tr');
+    rows.append('td').html(function(method) {
+      return method;
+    });
+    rows.append('td').html(function(method) {
+      return sample_meta.hasOwnProperty(method) && sample_meta[method].hasOwnProperty('purity') ? sample_meta[method].purity.toFixed(3) : '&mdash;';
+    });
+    rows.append('td').html(function(method) {
+      return sample_meta.hasOwnProperty(method) && sample_meta[method].hasOwnProperty('ploidy') ? sample_meta[method].ploidy.toFixed(3) : '&mdash;';
+    });
   };
 
   d3.selectAll('#sample-list-extended tbody tr').on('click', function(sampid) {

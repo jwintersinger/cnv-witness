@@ -44,8 +44,8 @@ def main():
   for sampid, info in tumor_info.items():
     if sampid not in summaries:
       continue
-    tumor_info[sampid]['purity'] = {meth: summaries[sampid][meth]['purity'] for meth in summaries[sampid].keys()}
-    tumor_info[sampid]['ploidy'] = {meth: summaries[sampid][meth]['ploidy'] for meth in summaries[sampid].keys()}
+    tumor_info[sampid]['purity'] = {meth: float(summaries[sampid][meth]['purity']) for meth in summaries[sampid].keys() if summaries[sampid][meth]['purity'] != 'NA'}
+    tumor_info[sampid]['ploidy'] = {meth: float(summaries[sampid][meth]['ploidy']) for meth in summaries[sampid].keys() if summaries[sampid][meth]['ploidy'] != 'NA'}
 
   print(json.dumps(tumor_info))
 
