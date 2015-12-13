@@ -290,6 +290,11 @@ Interface.prototype._fill_sample_selectors = function(sample_list) {
   var sampids = Object.keys(sample_list).sort();
   this._update_sample_count(sampids.length);
 
+  var make_human_readable_from_sort_val = function() {
+    var prop = parseFloat(d3.select(this).attr('data-sort-value'));
+    return prop === -1 ? '&mdash;' : prop.toFixed(3);
+  };
+
   // Fill extended selector
   var rows = d3.select('#sample-list-extended tbody').html('')
     .selectAll('tr')
@@ -299,16 +304,34 @@ Interface.prototype._fill_sample_selectors = function(sample_list) {
   rows.append('td').attr('class', 'tumor-type').html('&mdash;');
   rows.append('td').attr('class', 'ploidy').text(0.5);
   rows.append('td').attr('class', 'purity').text(0.6);
-  rows.append('td').attr('data-sort-value', function(d, i) {
+  rows.append('td').attr('class', 'genome-prop').attr('data-sort-value', function(d, i) {
     var proportions = sample_list[d].genome_proportions
     // Return -1 so that datasets without consensus will be sorted below those
     // for which the consensus is actually 0.
     return proportions.hasOwnProperty('consensus') ?  proportions.consensus  : -1;
-  }).html(function(d, i) {
-    var prop = parseFloat(d3.select(this).attr('data-sort-value'));
-    return prop === -1 ? '&mdash;' : prop.toFixed(3);
-  });
-  rows.append('td').attr('class', 'consensus-score').text(0.8);
+  }).html(make_human_readable_from_sort_val);
+  rows.append('td').attr('class', 'consensus-score').attr('data-sort-value', function(d, i) {
+    var proportions = sample_list[d].genome_proportions
+    if(!proportions.hasOwnProperty('consensus'))
+      return -1;
+
+    // Don't include consensus in mean.
+    var cons_prop = proportions.consensus;
+    delete proportions.consensus;
+
+    // Don't include THetA values in mean.
+    var keys = Object.keys(proportions);
+    keys.forEach(function(k) {
+      if(k.lastIndexOf('theta', 0) === 0)
+        delete proportions[k];
+    });
+
+    var mean_prop = d3.mean(Object.keys(proportions).map(function(method) {
+      return proportions[method];
+    }));
+    return cons_prop / mean_prop;
+  }).html(make_human_readable_from_sort_val);
+
   $('#sample-list-extended').stupidtable();
 
   var self = this;
