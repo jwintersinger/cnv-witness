@@ -155,7 +155,7 @@ CnvPlotter.prototype._compute_cum_chr_locus = function(chrom, pos) {
   return this._cum_chr_lens[chrom] + pos;
 }
 
-CnvPlotter.prototype._compute_offsets = function(cn_calls, rect_heights) {
+CnvPlotter.prototype._compute_offsets = function(cn_calls, rect_heights, active_methods) {
   var states = {};
 
   Object.keys(rect_heights).forEach(function(cntype) {
@@ -170,7 +170,8 @@ CnvPlotter.prototype._compute_offsets = function(cn_calls, rect_heights) {
         cn_calls.intervals[cntype][chrom][cnstate].forEach(function(interval) {
           var start = interval[0], end = interval[1], methods = interval[2];
           methods.forEach(function(method) {
-            states[cnstate][cntype][method] = true;
+            if(active_methods.hasOwnProperty(method))
+              states[cnstate][cntype][method] = true;
           });
         });
       });
@@ -211,13 +212,19 @@ CnvPlotter.prototype._compute_offsets = function(cn_calls, rect_heights) {
   };
 }
 
-CnvPlotter.prototype.plot = function(cn_calls) {
+CnvPlotter.prototype.plot = function(cn_calls, active_methods) {
   var rect_heights = {
     total: 10,
     minor: 5
   };
-  var offsets = this._compute_offsets(cn_calls, rect_heights);
-  var methods = cn_calls.methods;
+  // Object gives O(1) lookup and simpler code.
+  var active_meth = {};
+  active_methods.forEach(function(method) {
+    active_meth[method] = true;
+  });
+  active_methods = active_meth;
+
+  var offsets = this._compute_offsets(cn_calls, rect_heights, active_methods);
   var colours = this._iface.pick_colours();
   var fills = this._create_fills(colours, rect_heights);
 
@@ -227,6 +234,15 @@ CnvPlotter.prototype.plot = function(cn_calls) {
       Object.keys(cn_calls.intervals[cntype][chrom]).forEach(function(cnstate) {
         cn_calls.intervals[cntype][chrom][cnstate].forEach(function(interval) {
           var start = interval[0], end = interval[1], methods = interval[2];
+
+          var meth = [];
+          methods.forEach(function(m) {
+            if(active_methods.hasOwnProperty(m))
+              meth.push(m);
+          });
+          methods = meth;
+          if(methods.length === 0)
+            return;
 
           var xstart = self._xscale(self._compute_cum_chr_locus(chrom, start));
           var xend = self._xscale(self._compute_cum_chr_locus(chrom, end));
@@ -246,9 +262,6 @@ CnvPlotter.prototype.plot = function(cn_calls) {
         });
       });
     });
-  });
-
-  this._iface.make_methods_filter('#sample-method-filter', methods, function() {
   });
 }
 
@@ -280,7 +293,7 @@ Interface.prototype.make_methods_filter = function(container, methods, on_change
       var active_methods = d3.select(this.parentNode).selectAll('.method-choice')
                              .filter('.active')
                              .data();
-      on_change();
+      on_change(active_methods);
     });
 }
 
@@ -352,17 +365,23 @@ Interface.prototype._fill_sample_selectors = function(sample_list, metadata) {
 
   var self = this;
   var load_sample = function(sampid) {
-    var redraw = function() {
-      var plotter = new CnvPlotter(self);
-      var cn_calls_path = sample_list[sampid].cn_calls_path;
-
-      d3.json(cn_calls_path, function(error, cn_calls) {
+    var cn_calls_path = sample_list[sampid].cn_calls_path;
+    d3.json(cn_calls_path, function(error, cn_calls) {
+      var redraw = function() {
         if(error) return console.warn(error);
-        plotter.plot(cn_calls);
-      });
-    };
-    redraw();
-    d3.select(window).on('resize', redraw);
+        var methods = cn_calls.methods;
+
+        var plotter = new CnvPlotter(self);
+        plotter.plot(cn_calls, methods);
+
+        self.make_methods_filter('#sample-method-filter', methods, function(active_methods) {
+          plotter = new CnvPlotter(self);
+          plotter.plot(cn_calls, active_methods);
+        });
+      };
+      redraw();
+      d3.select(window).on('resize', redraw);
+    });
 
     d3.select('#sampid').text(sampid);
     if(!metadata.hasOwnProperty(sampid))
@@ -425,7 +444,7 @@ Interface.prototype._index_samples_by_method = function(sample_list) {
   this._samples_by_method = samples_by_method;
 }
 
-Interface.prototype._filter = function(sample_list) {
+Interface.prototype._filter = function() {
   var active_methods = d3.select('#global-method-filter')
                          .selectAll('.method-choice.active')
                          .data();
