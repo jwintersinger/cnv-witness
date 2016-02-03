@@ -333,6 +333,9 @@ Interface.prototype._fill_sample_selectors = function(sample_list, metadata) {
   rows.append('td').attr('class', 'purity').attr('data-sort-value', function(sampid) {
     return calc_mean_val(sampid, 'purity');
   }).html(make_human_readable_from_sort_val);
+  rows.append('td').attr('class', 'base-cn-state').html(function(sampid) {
+    return metadata.hasOwnProperty(sampid) && metadata[sampid].hasOwnProperty('base_cn_state') ? metadata[sampid].base_cn_state.consensus : '&mdash;';
+  });
   rows.append('td').attr('class', 'genome-prop').attr('data-sort-value', function(d, i) {
     var proportions = sample_list[d].genome_proportions
     // Return -1 so that datasets without consensus will be sorted below those
@@ -498,7 +501,7 @@ Interface.prototype.pick_colours = function() {
     broad: '#d95f02',
     mustonen095: '#7570b3',
     peifer: '#e7298a',
-    theta_diploid: '#66a61e',
+    dkfz: '#66a61e',
     vanloo_wedge: '#e6ab02'
   };
 }

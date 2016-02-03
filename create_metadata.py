@@ -33,13 +33,20 @@ def load_summaries(summary_fns):
 
   return summaries
 
-
 def main():
   tumor_info_fn = sys.argv[1]
-  summary_fns = sys.argv[2:]
+  base_cn_state_fn = sys.argv[2]
+  summary_fns = sys.argv[3:]
 
   tumor_info = load_tumor_info(tumor_info_fn)
+  with open(base_cn_state_fn) as basecnf:
+    base_cn_state = json.load(basecnf)
   summaries = load_summaries(summary_fns)
+
+  for sampid, base_cn in base_cn_state.items():
+    if sampid not in tumor_info:
+      continue
+    tumor_info[sampid]['base_cn_state'] = base_cn
 
   for sampid, info in tumor_info.items():
     if sampid not in summaries:
