@@ -334,7 +334,7 @@ Interface.prototype._fill_sample_selectors = function(sample_list, metadata) {
     return calc_mean_val(sampid, 'purity');
   }).html(make_human_readable_from_sort_val);
   rows.append('td').attr('class', 'base-cn-state').html(function(sampid) {
-    return metadata.hasOwnProperty(sampid) && metadata[sampid].hasOwnProperty('base_cn_state') ? metadata[sampid].base_cn_state.consensus : '&mdash;';
+      return sample_list[sampid].base_cn_state.consensus;
   });
   rows.append('td').attr('class', 'genome-prop').attr('data-sort-value', function(d, i) {
     var proportions = sample_list[d].genome_proportions
@@ -391,7 +391,9 @@ Interface.prototype._fill_sample_selectors = function(sample_list, metadata) {
       return;
     d3.select('#tumor-type').text(metadata[sampid].tumor_type);
 
-    var sample_meta = {};
+    // We don't have updated purities & ploidies, so comment this out for now.
+    /*var sample_meta = {};
+    console.log(metadata[sampid].ploidy);
     Object.keys(metadata[sampid].ploidy).forEach(function(method) {
       if(!sample_meta.hasOwnProperty(method))
         sample_meta[method] = {};
@@ -415,7 +417,7 @@ Interface.prototype._fill_sample_selectors = function(sample_list, metadata) {
     });
     rows.append('td').html(function(method) {
       return sample_meta.hasOwnProperty(method) && sample_meta[method].hasOwnProperty('ploidy') ? sample_meta[method].ploidy.toFixed(3) : '&mdash;';
-    });
+    });*/
   };
 
   d3.selectAll('#sample-list-extended tbody tr').on('click', function(sampid) {
@@ -463,6 +465,7 @@ Interface.prototype._filter = function() {
     var row = $(this);
     var sampid = row.find('.sampid').text().toLowerCase();
     var tumor_type = row.find('.tumor-type').text().toLowerCase();
+    var base_cn_state = row.find('.base-cn-state').text().toLowerCase();
 
     for(var i = 0; i < active_methods.length; i++) {
       var method = active_methods[i];
@@ -472,7 +475,7 @@ Interface.prototype._filter = function() {
 
     var sample_filter = $('#sample-filter');
     var filter_text = $('#sample-filter').val().toLowerCase();
-    if(sampid.indexOf(filter_text) === -1 && tumor_type.indexOf(filter_text) === -1)
+    if(sampid.indexOf(filter_text) === -1 && tumor_type.indexOf(filter_text) === -1 && base_cn_state.indexOf(filter_text) === -1)
       return false;
 
     return true;

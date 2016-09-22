@@ -24,7 +24,8 @@ def main():
     datasets[dataset_name] = {
       'cn_calls_path': 'data/%s.json' % dataset_name,
       'methods': cn_calls['methods'],
-      'genome_proportions': cn_calls['genome_proportions']
+      'genome_proportions': cn_calls['genome_proportions'],
+      'base_cn_state': cn_calls['base_cn_state'],
     }
 
   out_path = os.path.join(base_dir, 'index.json')
